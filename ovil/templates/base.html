@@ -1,0 +1,17 @@
+<!doctype html>
+<title>{% block title %}{% endblock %} - Objects and Verbs Issue Logger</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
+{% block add_links %}{% endblock %}
+<nav>
+	<h1>{% block inner_title%}{% endblock %}</h1>
+	<ul>
+	</ul>
+</nav>
+<section class="content">
+	<header>
+		{% block header %}{% endblock %}
+	</header>
+	{% block content %}{% endblock %}
+</section>	
+
+{% block scripts %}{% endblock %}

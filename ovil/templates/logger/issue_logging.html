@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block add_links %}
+    <!-- Include stylesheet for codemirror-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='codemirror-5.49.2/lib/codemirror.css') }}">
+
+
+{% endblock %}
+
+{% block inner_title%}Objects and Verbs Issue Logger{% endblock %}
+
+{% block header %}
+    <h1>{% block title %}New issue{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form action="{{ url_for('logger.parse_query') }}" method="POST">
+        <!-- Create the sql editor -->
+        <label for="sql_editor">SQL Query</label>
+        {% if query %}
+            <textarea name="sql_script" id="sql_editor" required>{{query}}</textarea>
+        {% else %}
+            <textarea name="sql_script" id="sql_editor" required></textarea>
+        {% endif %}
+        <hr>
+        <input type="submit" value="Parse Query">
+
+        <label for="objs_verbs">Objects & Verbs</label>
+        {% if objs_verbs %}
+            <output name="objs_verbs_output" id="objs_verbs">{{objs_verbs}}</output>
+        {% else %}
+            <output name="objs_verbs_output" id="objs_verbs"></output>
+        {% endif %}
+        <hr>
+    </form>
+
+    <form id="issue_form" onsumbit="get_issue_body_contents();" action="{{ url_for('logger.create_issue') }}" method="POST">
+        <label for="expected_output">Expected Output</label>
+        <textarea name="expected_output" id="expected_output" required></textarea>
+        <hr>
+        <label for="user_name">Name</label>
+        <input name="user_name" type="text" id="user_name" required>
+        <hr>
+        <label for="editor">Email</label>
+        <input name="user_mail" type="text" id="user_mail" required>
+        <hr>
+        <input type="submit" value="Log Issue">
+    </form>
+{% endblock %}
+
+{% block scripts %}
+
+    <script src="{{ url_for('static', filename='codemirror-5.49.2/lib/codemirror.js')}}"></script>
+    <script src="{{ url_for('static', filename='codemirror-5.49.2/mode/sql/sql.js')}}"></script>
+
+    <script type=text/javascript>
+        var txtArea = document.getElementById("sql_editor");
+        var cmEditor = CodeMirror.fromTextArea(txtArea,{
+            lineNumbers : true
+        });
+
+    </script>
+
+{% endblock %}
