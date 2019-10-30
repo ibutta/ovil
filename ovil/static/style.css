@@ -137,3 +137,15 @@ html {
     align-self: start;
     min-width: 10em;
   }
+
+  h1#err {
+    font-family: serif;
+    color: red;
+    margin: 1rem 0;
+  }
+
+  h1#success {
+    font-family: serif;
+    color: green;
+    margin: 1rem 0;
+  }

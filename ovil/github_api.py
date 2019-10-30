@@ -1,34 +1,49 @@
+from flask import jsonify
 import json
 import requests
 
 USERNAME = 'ibutta'
-PASSWD = 'hiwhiwywH1'
+TOKEN = 'f0468b100dfbe848d7db28daea9075f6194635b7'
 
 REPO_OWNER = 'ibutta'
 REPO_NAME = 'flask-tutorial'
 
-def create_github_issue(title, body=None, assignee=None, milestone=None, labels=['bug']):
+def create_github_issue(title='OVParser Bug', body=None, assignees=None, milestone=None, labels=['bug']):
 
     url = 'https://api.github.com/repos/{0}/{1}/issues'.format(REPO_OWNER, REPO_NAME)
 
-    session = requests.Session()
-    session.auth = (USERNAME, PASSWD)
-
-    issue = {
-        'title': title,
-        'body': body,
-        'assignee': assignee,
-        'milestone': milestone,
-        'labels': labels
+    headers = {
+        'Authorization': 'token {0}'.format(TOKEN)
     }
 
-    req = session.post(url, json.dumps(issue))
+    issue_data = {
+        'title': title,
+        'body': body,
+        # 'assignee': assignee, --> deprecated
+        'milestone': milestone,
+        'labels': labels,
+        'assignees': assignees
+    }
 
-    if req.status_code == 201:
+    payload = json.dumps(issue_data)
+    response = requests.request('POST', url, data=payload, headers=headers)
+
+    if response.status_code == 201:
         print('Issue "{0}" successfully created!'.format(title))
+        content = response.content.decode('utf8')
+        json_content = json.loads(content)
+        return {
+            'success': True,
+            'status_code': response.status_code,
+            'html_url': json_content['html_url']
+        }
     else:
         print('Could not create issue "{0}"'.format(title))
-        print('Server returned:', req.content)
+        print('Server returned:', response.content)
+        return {
+            'success': False,
+            'status_code': response.status_code
+        }
 
 if __name__ == "__main__":
-    create_github_issue('This is an issue', 'This is the body of the issue.', 'ibutta', labels=['bug'])
+    create_github_issue('This is an issue 33', 'This is the body of the issue created with an authentication token.', ['ibutta',], labels=['bug'])

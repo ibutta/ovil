@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block inner_title %}Issue logged!{% endblock %}
+{% block content %}
+  <h1 id="err">Issue successfully created!</h1>
+  <p><a href="{{ issue_url }}">See the issue at GitHub</a>
+  <p><a href="{{ url_for('home') }}">Return to the initial page</a>
+{% endblock %}

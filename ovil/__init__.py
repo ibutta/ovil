@@ -23,5 +23,6 @@ def create_app(test_config = None):
 
     from . import logger
     app.register_blueprint(logger.bp)
+    app.add_url_rule('/', endpoint='home')
 
     return app

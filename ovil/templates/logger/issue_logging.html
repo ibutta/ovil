@@ -18,12 +18,12 @@
         <!-- Create the sql editor -->
         <label for="sql_editor">SQL Query</label>
         {% if query %}
-            <textarea name="sql_script" id="sql_editor" required>{{query}}</textarea>
+            <textarea name="sql_script" id="sql_editor">{{query}}</textarea>
         {% else %}
-            <textarea name="sql_script" id="sql_editor" required></textarea>
+            <textarea name="sql_script" id="sql_editor"></textarea>
         {% endif %}
         <hr>
-        <input type="submit" value="Parse Query">
+        <input id="submit_query" type="submit" value="Parse Query">
 
         <label for="objs_verbs">Objects & Verbs</label>
         {% if objs_verbs %}
@@ -34,7 +34,7 @@
         <hr>
     </form>
 
-    <form id="issue_form" onsumbit="get_issue_body_contents();" action="{{ url_for('logger.create_issue') }}" method="POST">
+    <form action="{{ url_for('logger.create_issue') }}" method="POST">
         <label for="expected_output">Expected Output</label>
         <textarea name="expected_output" id="expected_output" required></textarea>
         <hr>
@@ -42,9 +42,9 @@
         <input name="user_name" type="text" id="user_name" required>
         <hr>
         <label for="editor">Email</label>
-        <input name="user_mail" type="text" id="user_mail" required>
+        <input name="user_email" type="text" id="user_email" required>
         <hr>
-        <input type="submit" value="Log Issue">
+        <input id="submit_issue" type="submit" value="Log Issue">
     </form>
 {% endblock %}
 
