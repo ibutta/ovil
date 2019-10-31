@@ -1,0 +1,3 @@
+graft ovil/static
+graft ovil/templates
+global-exclude *.pyc

@@ -1,31 +1,26 @@
-from flask import Blueprint, redirect
-from flask import render_template, request, url_for
-from flask import current_app, g
+from flask import Blueprint, redirect, session, flash
+from flask import render_template, request, url_for, app
 from uuid import uuid1
-from . import db
-from . import github_api
+from ovil.db import get_db
+from ovil.github_api import create_github_issue
 import subprocess
-import re
 
 bp = Blueprint('logger', __name__)
 
-globalData:dict = {}
-globalData['query_parsed'] = False
-
-
 @bp.route('/')
 def home():
-    globalData['query_parsed'] = False
+    session.clear()
+    session['query_parsed'] = False
     return render_template('logger/issue_logging.html')
 
-@bp.route('/<query>&<objs_verbs>', methods=('GET', 'POST'))
-def log_form_filled(query, objs_verbs):
-    return render_template('logger/issue_logging.html', query=query, objs_verbs=objs_verbs)
+@bp.route('/query_parsed', methods=('GET', 'POST'))
+def log_form_filled():
+    return render_template('logger/issue_logging.html', query=session.get('query'), objs_verbs=session.get('objs_verbs'))
 
 @bp.route('/parse_query', methods=('POST',))
 def parse_query():
 
-    print('parse_query ---> starting...')
+    debug_print('parse_query ---> starting...')
 
     query = request.form['sql_script']
     if query:
@@ -55,14 +50,14 @@ def parse_query():
         )
 
         
-        print("parse_query -> query fetch from html:", query)
+        debug_print("parse_query -> query fetch from html:", query)
 
         id = uuid1()
 
         gwProc.stdin.write('{0} {1} _^_\n'.format(id.hex, query).encode())
         gwProc.communicate()[0]
 
-        dbClient = db.get_db('mongodb://admin:jS0nar$@127.0.0.1:27117/admin')
+        dbClient = get_db('mongodb://admin:jS0nar$@127.0.0.1:27117/admin')
 
         if dbClient:
             dbase = dbClient.sonargateway_test
@@ -70,27 +65,36 @@ def parse_query():
             objs_verbs = 'Error fetching Objects and Verbs from database...'
             try:
                 objs_verbs = str(entry["Objects and Verbs"])
-                print('parse_query line 65--> objs_verbs:', objs_verbs)
                 #insert a space after each objects and verbs to improve readability
                 objs_verbs = '; '.join(objs_verbs.split(';'))
-                print('parse_query line 68--> objs_verbs:', objs_verbs)
-                globalData['objs_verbs'] = objs_verbs
-                globalData['query_id'] = id
-                globalData['query_parsed'] = True
+
+                session['objs_verbs'] = objs_verbs
+                session['query_id'] = id.hex
+                session['query'] = query
+                session['query_parsed'] = True
+                
+                if not objs_verbs:
+                    flash('Oops... The query parsing response returned empty. Please check the input query...')
+
+                debug_print("parse_query -> query parsed successfully:")
+
             except:
-                print('parse_query --> ERROR! could not fetch objects and verbs')
+                flash('Error fetching objects and verbs from database...')
+                debug_print('parse_query --> ERROR! could not fetch objects and verbs')
                 pass
-            return redirect(url_for('.log_form_filled', query=query, objs_verbs=objs_verbs))
+            finally:
+                return redirect(url_for('.log_form_filled'))
         else:
-            return redirect(url_for('.log_form_filled', query=query, objs_verbs='Unnable to connect to database...'))
+            flash('Unnable to connect to database...')
+            return redirect(url_for('.log_form_filled'))
     else:
         return redirect(url_for('.home'))
 
 @bp.route('/create_issue', methods=('POST',))
 def create_issue():
-    if globalData['query_parsed']:
-        query_id = str(globalData['query_id'])
-        actual_output = globalData['objs_verbs']
+    if session.get('query_parsed'):
+        query_id = session.get('query_id')
+        actual_output = session.get('objs_verbs')
 
         expected_output = request.form['expected_output']
         user_name = request.form['user_name']
@@ -99,21 +103,29 @@ def create_issue():
         issue_body = 'Query ID:\n\t{0}\n\nActual output:\n\n\t{1}\n\nExpected output:\n\n\t{2}\n\nLogged by: {3}\nemail: {4}'.format(
             query_id, actual_output, expected_output, user_name, user_email)
 
-        response = github_api.create_github_issue(body=issue_body, assignees=['ibutta',])
+        response = create_github_issue(body=issue_body, assignees=['ibutta',])
 
         if response['success']:
-            globalData['issue_url'] = response['html_url']
+            session['issue_url'] = response['html_url']
             return redirect(url_for('.success'))
         else:
-            return render_template('logger/issue_err.html')
+            return redirect(url_for('.issue_err'))
     else:
-        return render_template('logger/consistency_err.html')
+        return redirect(url_for('.consistency_err'))
         
-@bp.route('/err', methods=('POST','GET'))
-def err_test():
+@bp.route('/form_consistency_error', methods=('POST','GET'))
+def consistency_err():
+    return render_template('logger/consistency_err.html')
+
+@bp.route('/creating_issue_error', methods=('POST','GET'))
+def issue_err():
     return render_template('logger/issue_err.html')
 
-@bp.route('/success', methods=('POST','GET'))
+@bp.route('/issue_creating_success', methods=('POST','GET'))
 def success():
-    return render_template('logger/success.html', issue_url=globalData['issue_url'])
+    return render_template('logger/success.html')
 
+def debug_print(*values):
+    if app.get_debug_flag():
+        print('***DEBUG***', *values)
+    pass

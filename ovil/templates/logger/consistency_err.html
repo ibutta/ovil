@@ -2,6 +2,10 @@
 {% block inner_title %}Issue logging failed - missing data{% endblock %}
 {% block content %}
   <h1 id="err">Failed creating issue...</h1>
-  <p>Please first parse a query and check the output. If it's not accurate provide the expected result, your name and email and click the "Log Issue" button.
+  <p>Please, try again using the following steps:</p>
+  <p>   1. Write a query, parse it and check the output.<br/>
+        2. If the output is not accurate provide the expected result in the designed text area.<br/>
+        3. Provide your name and email.<br/>
+        4. "Log Issue" button.
   <p><a href="{{ url_for('home') }}">Return to the initial page</a>
 {% endblock %}

@@ -12,9 +12,10 @@ def get_db(URI: str = ''):
             # a lightweight command to check if the connection
             # to the db was successfully established
             g.db.admin.command('ismaster')
-        except ConnectionFailure:
+        except:
             print('Unable to connect to DB server')
-        finally:
+            return None
+        else:
             return g.db
     return g.db
 

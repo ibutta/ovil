@@ -31,6 +31,9 @@
         {% else %}
             <output name="objs_verbs_output" id="objs_verbs"></output>
         {% endif %}
+        {% for msg in get_flashed_messages() %}
+            <div class="flash">{{ msg }}</div>
+        {% endfor %}
         <hr>
     </form>
 
