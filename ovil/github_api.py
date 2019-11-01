@@ -3,10 +3,27 @@ import json
 import requests
 
 USERNAME = 'ibutta'
-TOKEN = 'f356fa2ba7886f2f0e6497c3f045d2818f207694'
+TOKEN = 'e04ef264d5036aac1df117608fe0078c2b59b4a1'
 
 REPO_OWNER = 'ibutta'
 REPO_NAME = 'flask-tutorial'
+
+def request_user_id(client_id='', ):
+    # url = 'https://github.com/login/oauth/authorize'
+
+    # issue_data = {
+    #     'client_id': title,
+    #     'body': body,
+    #     # 'assignee': assignee, --> deprecated
+    #     'milestone': milestone,
+    #     'labels': labels,
+    #     'assignees': assignees
+    # }
+
+    # payload = json.dumps(issue_data)
+    # response = requests.request('POST', url, data=payload, headers=headers)
+
+    pass
 
 def create_github_issue(title='OVParser Bug', body=None, assignees=None, milestone=None, labels=['bug']):
 

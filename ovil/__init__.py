@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-import ssl
+# import ssl
 
 def create_app(test_config=None):
     """ Handles configuration, registration, and other setup the Flask application needs.
