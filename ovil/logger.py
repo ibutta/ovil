@@ -1,7 +1,8 @@
 from flask import Blueprint, redirect, session, flash
 from flask import render_template, request, url_for, app
 from uuid import uuid1
-from . import db
+# from ovil.db_module import get_db
+from . import db_module
 from ovil.github_api import create_github_issue
 import subprocess
 
@@ -32,15 +33,16 @@ def parse_query():
         # was concatenating the sudo password with the query ID from stdin and inserting as
         # the entry ID on the db.
 
-        # gwProc = subprocess.Popen(['sudo', '-S', 'ls', '/usr/lib/sonar/gateway/'],
-        #     stdin=subprocess.PIPE,
-        #     stdout=subprocess.PIPE
-        # )
+        gwProc = subprocess.Popen(['sudo', '-S', 'ls', '/usr/lib/sonar/gateway/'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE
+        )
 
-        # gwProc.stdin.write('hiwhiwywH1\n'.encode())
-        # gwProc.communicate()[0]
+        gwProc.stdin.write('hiwhiwywH1\n'.encode())
+        gwProc.communicate()[0]
 
-        gwProc = subprocess.Popen(['sudo', '-S', '/usr/lib/sonar/gateway/sonargateway','--config', 
+        # gwProc = subprocess.Popen(['sudo', '-S', '/usr/lib/sonar/gateway/sonargateway','--config', 
+        gwProc = subprocess.Popen(['sudo', '/usr/lib/sonar/gateway/sonargateway','--config', 
             '/etc/sonar/gateway/objects_and_verbs_parser.json',
             '--input_del',
             '_^_'
@@ -57,8 +59,8 @@ def parse_query():
         gwProc.stdin.write('{0} {1} _^_\n'.format(id.hex, query).encode())
         gwProc.communicate()[0]
 
-        # dbClient = db.get_db('mongodb://admin:jS0nar$@127.0.0.1:27117/admin')
-        dbClient = db.get_db('mongodb://uadmin:pjS0n@r$@127.0.0.1:27117/admin')
+        dbClient = db_module.get_db('mongodb://admin:jS0nar$@127.0.0.1:27117/admin')
+        # dbClient = get_db('mongodb://admin:jS0n@r$@127.0.0.1:27117/admin')
 
         if dbClient:
             dbase = dbClient.sonargateway_test

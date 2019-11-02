@@ -21,8 +21,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    from . import db
-    db.config_app(app)
+    from . import db_module
+    db_module.config_app(app)
 
     from . import logger
     app.register_blueprint(logger.bp)

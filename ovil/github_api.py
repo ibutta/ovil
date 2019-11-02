@@ -3,7 +3,7 @@ import json
 import requests
 
 USERNAME = 'ibutta'
-TOKEN = 'e04ef264d5036aac1df117608fe0078c2b59b4a1'
+TOKEN = '29776fc0c1e5c95f8bc62a640d4068d3165e48f4'
 
 REPO_OWNER = 'ibutta'
 REPO_NAME = 'flask-tutorial'
