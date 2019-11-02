@@ -7,19 +7,26 @@ def create_app(test_config=None):
     Also known as \"the application factory\". """
     
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY = b',\xf4\xc5\xb0*\xb9\xfc\xb6'
-    )
+    # app.config.from_mapping(
+    #     SECRET_KEY = b',\xf4\xc5\xb0*\xb9\xfc\xb6'
+    # )
 
-    if test_config is None:
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        app.config.from_mapping(test_config)
+    # if test_config is None:
+    #     app.config.from_pyfile('config.py', silent=True)
+    # else:
+    #     app.config.from_mapping(test_config)
     
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    if app.config['ENV'] == 'production':
+        app.config.from_object('config.py')
+    else:
+        app.config.from_mapping(
+            SECRET_KEY = b',\xf4\xc5\xb0*\xb9\xfc\xb6'
+        )
 
     from . import db_module
     db_module.config_app(app)

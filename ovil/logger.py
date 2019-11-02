@@ -1,5 +1,5 @@
 from flask import Blueprint, redirect, session, flash
-from flask import render_template, request, url_for, app
+from flask import render_template, request, url_for, current_app
 from uuid import uuid1
 # from ovil.db_module import get_db
 from . import db_module
@@ -137,6 +137,6 @@ def success():
     return render_template('logger/success.html')
 
 def debug_print(*values):
-    if app.get_debug_flag():
+    if current_app.config['ENV'] == "development"
         print('***DEBUG***', *values)
     pass
