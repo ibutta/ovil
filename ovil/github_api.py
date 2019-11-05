@@ -1,66 +1,161 @@
-from flask import jsonify
+from flask import jsonify, current_app, session, flash, g
+from ovil.aux_funcs import debug_print
+from jwt import JWT, jwk_from_dict, jwk_from_pem 
+from json import JSONDecodeError
 import json
 import requests
+import time
 
-USERNAME = 'ibutta'
-TOKEN = '29776fc0c1e5c95f8bc62a640d4068d3165e48f4'
+def get_access_token():
+    try:
+        debug_print('Starting app authentication against GitHub', func_name='get_access_token')
+        pem_file_path = str(current_app.config.get('GITHUB_APP_PEM_PATH'))
 
-REPO_OWNER = 'ibutta'
-REPO_NAME = 'flask-tutorial'
+        # This is the flow to request data about the app
+        # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/#authenticating-as-a-github-app
 
-def request_user_id(client_id='', ):
-    # url = 'https://github.com/login/oauth/authorize'
+        time_now = int(time.time())
 
-    # issue_data = {
-    #     'client_id': title,
-    #     'body': body,
-    #     # 'assignee': assignee, --> deprecated
-    #     'milestone': milestone,
-    #     'labels': labels,
-    #     'assignees': assignees
-    # }
-
-    # payload = json.dumps(issue_data)
-    # response = requests.request('POST', url, data=payload, headers=headers)
-
-    pass
-
-def create_github_issue(title='OVParser Bug', body=None, assignees=None, milestone=None, labels=['bug']):
-
-    url = 'https://api.github.com/repos/{0}/{1}/issues'.format(REPO_OWNER, REPO_NAME)
-
-    headers = {
-        'Authorization': 'token {0}'.format(TOKEN)
-    }
-
-    issue_data = {
-        'title': title,
-        'body': body,
-        # 'assignee': assignee, --> deprecated
-        'milestone': milestone,
-        'labels': labels,
-        'assignees': assignees
-    }
-
-    payload = json.dumps(issue_data)
-    response = requests.request('POST', url, data=payload, headers=headers)
-
-    if response.status_code == 201:
-        print('Issue "{0}" successfully created!'.format(title))
-        content = response.content.decode('utf8')
-        json_content = json.loads(content)
-        return {
-            'success': True,
-            'status_code': response.status_code,
-            'html_url': json_content['html_url']
+        payload = {
+            'iss': current_app.config.get('GITHUB_APP_ID'),
+            'iat': time_now,
+            'exp': time_now + (5 * 60)
         }
+
+        debug_print('Opening PEM file for reading', func_name='get_access_token')
+
+        with open(pem_file_path, 'rb') as f:
+            private_key = jwk_from_pem(f.read())
+            f.close()
+        
+        debug_print('PEM file successfully read', func_name='get_access_token') 
+
+        jwtoken = JWT()
+        jwsignature = jwtoken.encode(payload, private_key, 'RS256')
+
+        api_app_url = 'https://api.github.com/app/installations'
+
+        headers = {
+            'Authorization': 'Bearer {0}'.format(str(jwsignature)),
+            'Accept': 'application/vnd.github.machine-man-preview+json'
+        }
+
+        debug_print('Sending GET request to {0}'.format(api_app_url), func_name='get_access_token')
+        response = requests.get(api_app_url, headers=headers)
+
+        # Here starts the flow to acquire the access token
+        # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/#authenticating-as-an-installation
+
+        if response.status_code == 200: #OK
+            debug_print('GET request to {0} returned 200 OK'.format(api_app_url), func_name='get_access_token')
+
+            json_content = json.loads(response.content.decode('utf8'))
+            debug_print('Response content: {0}'.format(json_content), func_name='get_access_token')
+
+            if type(json_content) is list: 
+
+                debug_print('Content is list...', func_name='get_access_token')
+
+                # the github account may have more than one application installed
+                for l in json_content:
+                    debug_print('json within content list: {0}'.format(l), func_name='get_access_token')
+                    if l.get('app_id') == int(current_app.config.get('GITHUB_APP_ID')):
+                        debug_print('found the right json: {0}'.format(l), func_name='get_access_token')
+                        json_content = l
+                        break
+
+            debug_print('json_content before posting to the access tokens url: {0}'.format(json_content), func_name='get_access_token')
+            access_tokens_url = json_content.get('access_tokens_url')
+
+            debug_print('Sending POST request to {0}'.format(access_tokens_url), func_name='get_access_token')
+            response = requests.post(access_tokens_url, headers=headers)
+
+            if response.status_code == 201: #OK Created
+                debug_print('POST request to {0} returned 201 OK Created'.format(access_tokens_url), func_name='get_access_token')
+                json_content = json.loads(response.content.decode('utf8'))
+                return json_content.get('token')
+                # g.token = json_content.get('token')
+                
+        else:
+            debug_print('Unexpected response from github api with code: {0}'.format(response.status_code), func_name='get_access_token')    
+
+    except JSONDecodeError:
+        debug_print('ERROR reading json returned by github... (JSONDecodeError)', func_name='get_access_token')  
+
+    except OSError:
+        debug_print('ERROR reading PEM file...', func_name='get_access_token')      
+        
+    except:
+        # debug_print('ERROR authorizing app...', func_name='get_access_token')
+        return False
     else:
-        print('Could not create issue "{0}"'.format(title))
-        print('Server returned:', response.content)
+        debug_print('GitHub app authentication successful!', func_name='get_access_token')
+        return True
+
+def create_github_issue(title='OVParser Bug', body=None, assignees=None, milestone=None, labels=['bug'], auth_attempt=False):
+
+    repo_owner = current_app.config.get('GITHUB_APP_REPO_OWNER')
+    repo_name = current_app.config.get('GITHUB_APP_REPO_NAME')
+
+    url = 'https://api.github.com/repos/{0}/{1}/issues'.format(repo_owner, repo_name)
+
+    access_token = session.get('app_access_token')
+    # access_token = g.token
+    if access_token:
+        headers = {
+            'Authorization': 'token {0}'.format(session.get('app_access_token')),
+            # 'Authorization': 'token {0}'.format(g.token),
+            'Accept': 'application/vnd.github.machine-man-preview+json'
+        }
+
+        issue_data = {
+            'title': title,
+            'body': body,
+            'milestone': milestone,
+            'labels': labels,
+            'assignees': assignees
+        }
+
+        payload = json.dumps(issue_data)
+        response = requests.request('POST', url, data=payload, headers=headers)
+
+        if response.status_code == 401: #Unauthorized
+            debug_print('GitHub returned 401. The access token is probably expired', func_name='create_github_issue')
+            #maybe the jwt expired so we need another one
+            if not auth_attempt:
+                debug_print('Trying to generate a new access token', func_name='create_github_issue')
+                get_access_token()
+                create_github_issue(title=title, body=body, assignees=assignees, milestone=milestone, labels=labels, auth_attempt=True)
+            else:
+                flash('Could not authenticate against GitHub...')
+                debug_print('Authentication against github failed with 401 two times consecutively...', func_name='create_github_issue')
+
+
+        if response.status_code == 201: #OK Created
+            debug_print('Issue "{0}" successfully created!'.format(title), func_name='create_github_issue')
+            # content = response.content.decode('utf8')
+            json_content = json.loads(response.text)
+            return {
+                'success': True,
+                'status_code': response.status_code,
+                'html_url': json_content['html_url']
+            }
+        else:
+            debug_print('Could not create issue "{0}"'.format(title), func_name='create_github_issue')
+            debug_print('GitHub returned:', response.content, func_name='create_github_issue')
+            return {
+                'success': False,
+                'status_code': response.status_code
+            }
+    
+    else:
+        flash('Could not authenticate against GitHub...')
+        debug_print('ERROR! There is no access token defined...', func_name='create_github_issue')
         return {
             'success': False,
-            'status_code': response.status_code
+            'status_code': ''
         }
 
-if __name__ == "__main__":
-    create_github_issue('This is an issue 33', 'This is the body of the issue created with an authentication token.', ['ibutta',], labels=['bug'])
+
+# if __name__ == "__main__":
+#     create_github_issue('This is an issue 33', 'This is the body of the issue created with an authentication token.', ['ibutta',], labels=['bug'])

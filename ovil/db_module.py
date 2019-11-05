@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from flask import current_app, g
-from ovil.logger import debug_print
+from ovil.aux_funcs import debug_print
 
 def get_db(URI: str = ''):
     if 'db' not in g:
@@ -14,7 +14,7 @@ def get_db(URI: str = ''):
             # to the db was successfully established
             g.db.admin.command('ismaster')
         except:
-            debug_print('Unable to connect to DB server')
+            debug_print('Unable to connect to DB server...', func_name='get_db')
             return None
         else:
             return g.db

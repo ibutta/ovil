@@ -1,43 +1,28 @@
 import os
 from flask import Flask
-# import ssl
 
-def create_app(test_config=None):
+def create_app(config_filename):
     """ Handles configuration, registration, and other setup the Flask application needs.
     Also known as \"the application factory\". """
     
-    app = Flask(__name__, instance_relative_config=True)
-    # app.config.from_mapping(
-    #     SECRET_KEY = b',\xf4\xc5\xb0*\xb9\xfc\xb6'
-    # )
-
-    # if test_config is None:
-    #     app.config.from_pyfile('config.py', silent=True)
-    # else:
-    #     app.config.from_mapping(test_config)
+    app = Flask(__name__)
+    app.config.from_pyfile('config.cfg', silent=True)
+    
+    try:
+        app.config.from_envvar('OVIL_CUSTOM_CONFIG')
+    except:
+        pass
     
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
 
-    if app.config['ENV'] == 'production':
-        app.config.from_object('config.py')
-    else:
-        app.config.from_mapping(
-            SECRET_KEY = b',\xf4\xc5\xb0*\xb9\xfc\xb6'
-        )
-
-    from . import db_module
-    db_module.config_app(app)
+    from ovil.db_module import config_app
+    config_app(app)
 
     from . import logger
     app.register_blueprint(logger.bp)
     app.add_url_rule('/', endpoint='home')
-
-    # context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    # context.load_cert_chain('')
-
-    # app.config.
 
     return app

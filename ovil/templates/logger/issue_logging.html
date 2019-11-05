@@ -40,12 +40,13 @@
     <form action="{{ url_for('logger.create_issue') }}" method="POST">
         <label for="expected_output">Expected Output</label>
         <textarea name="expected_output" id="expected_output" required></textarea>
-        <hr>
-        <label for="user_name">Name</label>
-        <input name="user_name" type="text" id="user_name" required>
-        <hr>
-        <label for="editor">Email</label>
-        <input name="user_email" type="text" id="user_email" required>
+        <div>
+            <label for="user_credential">jSonar Email</label><br>
+            <input name="user_credential" type="text" id="user_credential" size="30" required><label>@jsonar.com</label>
+            <hr>
+            <label for="github_user">GitHub Username</label><br>
+            <input name="github_user" type="text" id="github_user" size="30" required>
+        </div>
         <hr>
         <input id="submit_issue" type="submit" value="Log Issue">
     </form>
