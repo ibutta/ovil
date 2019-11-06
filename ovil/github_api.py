@@ -6,6 +6,21 @@ import json
 import requests
 import time
 
+def search_user(user_name):
+    url = 'https://api.github.com/search/users?q=user:{0}'.format(str(user_name))
+    debug_print('URL for searching user: {0}'.format(url), func_name='search_user')
+    response = requests.get(url)
+    debug_print('Response from github api has code {0} and content: {1}'.format(response.status_code, response.text), func_name='search_user')
+    if response.status_code == 200: #OK
+        json_content = json.loads(response.content.decode('utf8'))
+        total_count = int(json_content.get('total_count'))
+        if total_count == 1:
+            return True
+        else:
+            return False
+    return False
+
+
 def get_access_token():
     try:
         debug_print('Starting app authentication against GitHub', func_name='get_access_token')
@@ -99,12 +114,13 @@ def create_github_issue(title='OVParser Bug', body=None, assignees=None, milesto
 
     url = 'https://api.github.com/repos/{0}/{1}/issues'.format(repo_owner, repo_name)
 
-    access_token = session.get('app_access_token')
+    # access_token = session.get('app_access_token')
     # access_token = g.token
-    if access_token:
+    # if access_token:
+    if g.token:
         headers = {
-            'Authorization': 'token {0}'.format(session.get('app_access_token')),
-            # 'Authorization': 'token {0}'.format(g.token),
+            # 'Authorization': 'token {0}'.format(session.get('app_access_token')),
+            'Authorization': 'token {0}'.format(g.token),
             'Accept': 'application/vnd.github.machine-man-preview+json'
         }
 

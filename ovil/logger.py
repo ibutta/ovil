@@ -4,20 +4,29 @@ from flask import Blueprint, redirect, session, flash
 from flask import render_template, request, url_for, current_app, g
 from uuid import uuid1
 from ovil.db_module import get_db
-from ovil.github_api import create_github_issue, get_access_token
+from ovil.github_api import create_github_issue, get_access_token, search_user
 from ovil.aux_funcs import debug_print
 
 bp = Blueprint('logger', __name__)
 
 @bp.route('/')
 def home():
+    if 'token' not in g:
+        g.token = None
     session.clear()
     session['query_parsed'] = False
     return render_template('logger/issue_logging.html')
 
 @bp.route('/query_parsed', methods=('GET', 'POST'))
 def log_form_filled():
-    return render_template('logger/issue_logging.html', query=session.get('query'), objs_verbs=session.get('objs_verbs'))
+    form_filling = {}
+    form_filling['query'] = session.get('query')
+    form_filling['objs_verbs'] = session.get('objs_verbs')
+    form_filling['expected_output'] = session.get('expected_output')
+    form_filling['user_credential'] = session.get('user_credential')
+    form_filling['github_user'] = session.get('github_user')
+    # return render_template('logger/issue_logging.html', query=session.get('query'), objs_verbs=session.get('objs_verbs'))
+    return render_template('logger/issue_logging.html', **form_filling)
 
 @bp.route('/parse_query', methods=('POST',))
 def parse_query():
@@ -101,18 +110,18 @@ def parse_query():
                 session['query_parsed'] = True
                 
                 if not objs_verbs:
-                    flash('Oops... The query parsing response returned empty. Please check the input query...')
+                    flash('Oops... The query parsing response returned empty. Please check the input query...', 'query')
 
                 debug_print('query parsed successfully!', func_name='parse_query')
 
             except:
-                flash('Error fetching objects and verbs from database...')
+                flash('Error fetching objects and verbs from database...', 'query')
                 debug_print('ERROR! could not fetch objects and verbs', func_name='parse_query')
                 pass
             finally:
                 return redirect(url_for('.log_form_filled'))
         else:
-            flash('Unnable to connect to database...')
+            flash('Unnable to connect to database...', 'query')
             return redirect(url_for('.log_form_filled'))
     else:
         return redirect(url_for('.home'))
@@ -121,35 +130,48 @@ def parse_query():
 def create_issue():
     if session.get('query_parsed'):
 
-        if not session.get('app_access_token'):
-            session['app_access_token'] = get_access_token()
+        session['expected_output'] = request.form['expected_output']
+        session['user_credential'] = request.form['user_credential']
+        session['github_user'] = request.form['github_user']
 
-        query_id = session.get('query_id')
-        query = session.get('query')
-        actual_output = session.get('objs_verbs')
+        if search_user(request.form['github_user']):
 
-        expected_output = request.form['expected_output']
-        user_credential = request.form['user_credential']
-        github_user = request.form['github_user']
+            # if not session.get('app_access_token'):
+            #     session['app_access_token'] = get_access_token()
 
-        issue_body = 'OVParser collection entry ID:\n\t{0}\n\n\
-        Original Query:\n\t{1}\n\n\
-        Actual output:\n\n\t{2}\n\n\
-        Expected output:\n\n\t{3}\n\n\
-        Logged by: {4}\n\
-        Email: {5}@jsonar.com'.format(
-            query_id, query, actual_output, 
-            expected_output, github_user, user_credential
-        )
+            if g.get('token') == None:
+                g.token = get_access_token()
+                
 
-        response = create_github_issue(body=issue_body, assignees=['ibutta',])
+            query_id = session.get('query_id')
+            query = session.get('query')
+            actual_output = session.get('objs_verbs')
 
-        if response['success']:
-            session['issue_url'] = response['html_url']
+            expected_output = request.form['expected_output']
+            user_credential = request.form['user_credential']
+            github_user = request.form['github_user']
+            
+            issue_body = 'OVParser collection entry ID:\n\t{0}\n\n\
+            Original Query:\n\t{1}\n\n\
+            Actual output:\n\n\t{2}\n\n\
+            Expected output:\n\n\t{3}\n\n\
+            Logged by: {4}\n\
+            Email: {5}@jsonar.com'.format(
+                query_id, query, actual_output, 
+                expected_output, github_user, user_credential
+            )
+
+            response = create_github_issue(body=issue_body, assignees=['ibutta',])
+
+            if response['success']:
+                session['issue_url'] = response['html_url']
+                return redirect(url_for('.success'))
+            else:
+                return redirect(url_for('.issue_err'))
             return redirect(url_for('.success'))
         else:
-            return redirect(url_for('.issue_err'))
-        return redirect(url_for('.success'))
+            flash('Invalid GitHub username.', 'github')
+            return redirect(url_for('.log_form_filled'))
 
     else:
         return redirect(url_for('.consistency_err'))

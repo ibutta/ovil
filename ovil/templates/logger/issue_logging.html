@@ -17,7 +17,9 @@
     <form action="{{ url_for('logger.parse_query') }}" method="POST">
         <!-- Create the sql editor -->
         <label for="sql_editor">SQL Query</label>
+        
         {% if query %}
+            
             <textarea name="sql_script" id="sql_editor">{{query}}</textarea>
         {% else %}
             <textarea name="sql_script" id="sql_editor"></textarea>
@@ -26,12 +28,14 @@
         <input id="submit_query" type="submit" value="Parse Query">
 
         <label for="objs_verbs">Objects & Verbs</label>
+       
         {% if objs_verbs %}
+            
             <output name="objs_verbs_output" id="objs_verbs">{{objs_verbs}}</output>
         {% else %}
             <output name="objs_verbs_output" id="objs_verbs"></output>
         {% endif %}
-        {% for msg in get_flashed_messages() %}
+        {% for msg in get_flashed_messages(category_filter=["query"]) %}
             <div class="flash">{{ msg }}</div>
         {% endfor %}
         <hr>
@@ -39,13 +43,29 @@
 
     <form action="{{ url_for('logger.create_issue') }}" method="POST">
         <label for="expected_output">Expected Output</label>
-        <textarea name="expected_output" id="expected_output" required></textarea>
+        {% if expected_output %}
+            <textarea name="expected_output" id="expected_output" required>{{expected_output}}</textarea>
+        {% else %}
+            <textarea name="expected_output" id="expected_output" required></textarea>
+        {% endif %}
         <div>
             <label for="user_credential">jSonar Email</label><br>
-            <input name="user_credential" type="text" id="user_credential" size="30" required><label>@jsonar.com</label>
+            {% if user_credential %}
+                <input name="user_credential" type="text" id="user_credential" size="30" value="{{user_credential}}" required>
+            {% else %}
+                <input name="user_credential" type="text" id="user_credential" size="30" required>
+            {% endif %}
+            <label>@jsonar.com</label>
             <hr>
+            {% for msg in get_flashed_messages(category_filter=["github"]) %}
+                <div class="flash" size="100">{{ msg }}</div>
+            {% endfor %}
             <label for="github_user">GitHub Username</label><br>
-            <input name="github_user" type="text" id="github_user" size="30" required>
+            {% if github_user %}
+                <input name="github_user" type="text" id="github_user" size="30" value="{{github_user}}" required>
+            {% else %}
+                <input name="github_user" type="text" id="github_user" size="30" required>
+            {% endif %}
         </div>
         <hr>
         <input id="submit_issue" type="submit" value="Log Issue">
