@@ -2,6 +2,10 @@
 {% block inner_title %}Issue logging failed{% endblock %}
 {% block content %}
   <h1 id="err">Failed creating issue...</h1>
-  <p>Something went wrong while logging issue to GitHub. Please, try again.
+  {% if session.get('err_message') %}
+    <p>{{session.get('err_message')}}</p>
+  {% else %}
+    <p>Something went wrong while logging issue to GitHub. Please, try again.
+  {% endif %}
   <p><a href="{{ url_for('home') }}">Return to the initial page</a>
 {% endblock %}

@@ -1,5 +1,6 @@
 from flask import jsonify, current_app, session, flash, g
 from ovil.aux_funcs import debug_print
+from ovil import cache
 from jwt import JWT, jwk_from_dict, jwk_from_pem 
 from json import JSONDecodeError
 import json
@@ -37,7 +38,7 @@ def get_access_token():
             'exp': time_now + (5 * 60)
         }
 
-        debug_print('Opening PEM file for reading', func_name='get_access_token')
+        debug_print('Opening PEM file for reading. PEM file path: {0}'.format(pem_file_path), func_name='get_access_token')
 
         with open(pem_file_path, 'rb') as f:
             private_key = jwk_from_pem(f.read())
@@ -114,13 +115,10 @@ def create_github_issue(title='OVParser Bug', body=None, assignees=None, milesto
 
     url = 'https://api.github.com/repos/{0}/{1}/issues'.format(repo_owner, repo_name)
 
-    # access_token = session.get('app_access_token')
-    # access_token = g.token
-    # if access_token:
-    if g.token:
+    token = cache.get('token')
+    if token:
         headers = {
-            # 'Authorization': 'token {0}'.format(session.get('app_access_token')),
-            'Authorization': 'token {0}'.format(g.token),
+            'Authorization': 'token {0}'.format(token),
             'Accept': 'application/vnd.github.machine-man-preview+json'
         }
 
@@ -140,7 +138,7 @@ def create_github_issue(title='OVParser Bug', body=None, assignees=None, milesto
             #maybe the jwt expired so we need another one
             if not auth_attempt:
                 debug_print('Trying to generate a new access token', func_name='create_github_issue')
-                get_access_token()
+                cache.set('token', get_access_token())
                 create_github_issue(title=title, body=body, assignees=assignees, milestone=milestone, labels=labels, auth_attempt=True)
             else:
                 flash('Could not authenticate against GitHub...')
@@ -149,7 +147,6 @@ def create_github_issue(title='OVParser Bug', body=None, assignees=None, milesto
 
         if response.status_code == 201: #OK Created
             debug_print('Issue "{0}" successfully created!'.format(title), func_name='create_github_issue')
-            # content = response.content.decode('utf8')
             json_content = json.loads(response.text)
             return {
                 'success': True,
@@ -158,7 +155,7 @@ def create_github_issue(title='OVParser Bug', body=None, assignees=None, milesto
             }
         else:
             debug_print('Could not create issue "{0}"'.format(title), func_name='create_github_issue')
-            debug_print('GitHub returned:', response.content, func_name='create_github_issue')
+            debug_print('GitHub returned code {0} with content {1}:'.format(response.status_code, response.content), func_name='create_github_issue')
             return {
                 'success': False,
                 'status_code': response.status_code

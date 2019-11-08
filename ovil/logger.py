@@ -6,6 +6,7 @@ from uuid import uuid1
 from ovil.db_module import get_db
 from ovil.github_api import create_github_issue, get_access_token, search_user
 from ovil.aux_funcs import debug_print
+from ovil import cache
 
 bp = Blueprint('logger', __name__)
 
@@ -25,7 +26,6 @@ def log_form_filled():
     form_filling['expected_output'] = session.get('expected_output')
     form_filling['user_credential'] = session.get('user_credential')
     form_filling['github_user'] = session.get('github_user')
-    # return render_template('logger/issue_logging.html', query=session.get('query'), objs_verbs=session.get('objs_verbs'))
     return render_template('logger/issue_logging.html', **form_filling)
 
 @bp.route('/parse_query', methods=('POST',))
@@ -54,17 +54,15 @@ def parse_query():
         
 
         if current_app.config.get('SUDO_PASSWD'):
-            debug_print('acquiring "sudo trust"...', func_name='parse_query')
+            debug_print('Acquiring "sudo trust"...', func_name='parse_query')
             sgw_path_split = os.path.split(sgw_path)
 
             try:
-                # gwProc = subprocess.Popen(['sudo', '-S', 'ls', '/usr/lib/sonar/gateway/'],
                 gwProc = subprocess.Popen(['sudo', '-S', 'ls', sgw_path_split[0]],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE
                 )
 
-                # gwProc.stdin.write('hiwhiwywH1\n'.encode())
                 sudo_passwd = str(current_app.config.get('SUDO_PASSWD'))
                 sudo_passwd = sudo_passwd + '\n'
                 gwProc.stdin.write(sudo_passwd.encode())
@@ -77,7 +75,6 @@ def parse_query():
         debug_print('Calling sonargateway to parse the query', func_name='parse_query')
         sgw_config_path = str(current_app.config.get('SGW_CONFIG_PATH'))
         gwProc = subprocess.Popen(['sudo', '-S', sgw_path, '--config', 
-            # '/etc/sonar/gateway/objects_and_verbs_parser.json',
             sgw_config_path,
             '--input_del',
             '_^_'
@@ -92,7 +89,6 @@ def parse_query():
         gwProc.communicate()[0]
 
         db_URI = str(current_app.config.get('DB_CONN_STRING'))
-        # dbClient = get_db('mongodb://admin:jS0nar$@127.0.0.1:27117/admin')
         dbClient = get_db(db_URI)
 
         if dbClient:
@@ -135,12 +131,9 @@ def create_issue():
         session['github_user'] = request.form['github_user']
 
         if search_user(request.form['github_user']):
-
-            # if not session.get('app_access_token'):
-            #     session['app_access_token'] = get_access_token()
-
-            if g.get('token') == None:
-                g.token = get_access_token()
+            
+            if not cache.get('token'):
+                cache.set('token', get_access_token())
                 
 
             query_id = session.get('query_id')
@@ -151,22 +144,24 @@ def create_issue():
             user_credential = request.form['user_credential']
             github_user = request.form['github_user']
             
-            issue_body = 'OVParser collection entry ID:\n\t{0}\n\n\
-            Original Query:\n\t{1}\n\n\
-            Actual output:\n\n\t{2}\n\n\
-            Expected output:\n\n\t{3}\n\n\
-            Logged by: {4}\n\
+            issue_body = '**OVParser collection entry ID:**<br>{0}<br><br>\
+            **Original Query:**<br>`{1}`<br><br>\
+            **Actual output:**<br>{2}<br><br>\
+            **Expected output:**<br>{3}<br><br>\
+            Logged by: {4}<br>\
             Email: {5}@jsonar.com'.format(
                 query_id, query, actual_output, 
                 expected_output, github_user, user_credential
             )
 
-            response = create_github_issue(body=issue_body, assignees=['ibutta',])
+            response = create_github_issue(body=issue_body, assignees=['marianaJsonar', github_user])
 
             if response['success']:
                 session['issue_url'] = response['html_url']
                 return redirect(url_for('.success'))
             else:
+                if response['status_code'] == 422: #Permission denied
+                    session['err_message'] = 'Error 422 - Permission denied. You are not authorized in this repository!'    
                 return redirect(url_for('.issue_err'))
             return redirect(url_for('.success'))
         else:
