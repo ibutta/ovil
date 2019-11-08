@@ -1,7 +1,7 @@
 import subprocess
 import os
 from flask import Blueprint, redirect, session, flash
-from flask import render_template, request, url_for, current_app, g
+from flask import render_template, request, url_for, current_app
 from uuid import uuid1
 from ovil.db_module import get_db
 from ovil.github_api import create_github_issue, get_access_token, search_user
@@ -12,8 +12,6 @@ bp = Blueprint('logger', __name__)
 
 @bp.route('/')
 def home():
-    if 'token' not in g:
-        g.token = None
     session.clear()
     session['query_parsed'] = False
     return render_template('logger/issue_logging.html')
@@ -94,7 +92,6 @@ def parse_query():
         if dbClient:
             dbase = dbClient.sonargateway_test
             entry = dbase.ovparser.find_one({"_id": str(id.hex)})
-            objs_verbs = 'Error fetching Objects and Verbs from database...'
             try:
                 objs_verbs = str(entry["Objects and Verbs"])
                 #insert a space after each objects and verbs to improve readability

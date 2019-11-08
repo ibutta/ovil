@@ -1,7 +1,7 @@
-from flask import jsonify, current_app, session, flash, g
+from flask import current_app, flash
 from ovil.aux_funcs import debug_print
 from ovil import cache
-from jwt import JWT, jwk_from_dict, jwk_from_pem 
+from jwt import JWT, jwk_from_pem 
 from json import JSONDecodeError
 import json
 import requests
@@ -90,7 +90,6 @@ def get_access_token():
                 debug_print('POST request to {0} returned 201 OK Created'.format(access_tokens_url), func_name='get_access_token')
                 json_content = json.loads(response.content.decode('utf8'))
                 return json_content.get('token')
-                # g.token = json_content.get('token')
                 
         else:
             debug_print('Unexpected response from github api with code: {0}'.format(response.status_code), func_name='get_access_token')    
@@ -168,7 +167,3 @@ def create_github_issue(title='OVParser Bug', body=None, assignees=None, milesto
             'success': False,
             'status_code': ''
         }
-
-
-# if __name__ == "__main__":
-#     create_github_issue('This is an issue 33', 'This is the body of the issue created with an authentication token.', ['ibutta',], labels=['bug'])

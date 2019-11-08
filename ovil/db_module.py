@@ -1,6 +1,5 @@
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
-from flask import current_app, g
+from flask import g
 from ovil.aux_funcs import debug_print
 
 def get_db(URI: str = ''):
