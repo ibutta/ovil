@@ -1,7 +1,28 @@
+<<<<<<< HEAD
 server: big4-azure
 python version: 3.6.x
 this tutorial assumes that you are in the application root folder (the same where the MANIFEST.in and setup.py files are)
 
+=======
+# OVIL - Objects and Verbs Issue Logger
+
+## Getting started
+These instructions will get you an instance of the _**Objects and Verbs Issue Logger**_ application up and running.
+
+## Prerequisistes
+This tutorial assumes the following:
+```
+> You have Python version 3.6.x
+
+> You are issuing the following terminal commands within the application root folder (the same where the MANIFEST.in and setup.py files are)
+
+> Your firewall allows external connections to port 5000
+
+> SonarW and sonar gateway are installed in their default location
+
+> You use Chrome or Firefox as your browser
+```
+>>>>>>> development
 ## Creating a virtual environment `(venv)`
 
 1. Whenever you have to install several python modules to accomplish something it's always recommended to do so in a _`virtual environment`_. So start the installation by creating one:  
@@ -35,6 +56,7 @@ pip3 install wheel
 pip3 install dist/ovil-1.0.0-py3-none-any.whl
 ```
 
+<<<<<<< HEAD
 ## Creating the configuration folder and setting up the _`ovil-config.cfg`_ file
 
 1. The application won't work unless the _`ovil-config.cfg`_ file is located in the correct directory and properly configured. So the first thing to do is create the _`ovil-instance`_ folder the application will use to look for the _`ovil-config.cfg`_ file:
@@ -44,6 +66,14 @@ sudo mkdir /var/ovil-instance
 > _**`ATTENTION!`** The configuration folder **MUST** have the **`/var/ovil-instance`** path and the configuration file **MUST** be named **`ovil-config.cfg`**._
 
 2. Its time to configure the _`ovil-config.cfg`_ file:
+=======
+## Setting up the _`ovil-config.cfg`_ file
+
+1. The application will generate a default _`ovil-config.cfg`_ file located at _`~/.ovil-instance`_. For the application to work properly, you'll have to set some variables in this file.
+> _**`ATTENTION!`** All file paths within the _`ovil-config.cfg`_ file **have** to be **`absolute`**_.
+
+2. Following is a description of each variable found inside the _`ovil-config.cfg`_ file:
+>>>>>>> development
     * _**`DB_CONN_STRING`**_  
     This is the connection string to _`SonarW`_ and is exactly like a normal MongoDB string.   
     >_e.g. `'mongodb://admin:jS0nar$@127.0.0.1:27117/admin'`_
@@ -52,20 +82,32 @@ sudo mkdir /var/ovil-instance
     These global variables tell the application where to find the _`sonar gateway`_ and the _`.json`_ file to pass as the _`--config`_ parameter to the gateway
 
     * _**`GITHUB_APP_REPO_OWNER` and  `GITHUB_APP_REPO_NAME`**_  
+<<<<<<< HEAD
     These are the variables that tell the application to which GitHub account (_`GITHUB_APP_REPO_OWNER`_) and repository (_`GITHUB_APP_REPO_NAME`_) the issues should be logged. They are used to assemble the URL _`'https://api.github.com/:repo_owner/:repo_name/issues'`_  
     >_e.g.  
     `GITHUB_APP_REPO_OWNER = 'jsonar'`  
     `GITHUB_APP_REPO_NAME = 'sonarg'`  
+=======
+    These are the variables that tell the application which GitHub account (_`GITHUB_APP_REPO_OWNER`_) and repository (_`GITHUB_APP_REPO_NAME`_) the issues should be logged to. They are used to replace the placeholders in the following URL: _`'https://api.github.com/:repo_owner/:repo_name/issues'`_  
+    >_e.g.  
+    `GITHUB_APP_REPO_OWNER='jsonar'`  
+    `GITHUB_APP_REPO_NAME='sonarg'`  
+>>>>>>> development
     yields to:  
     `'https://api.github.com/jsonar/sonarg/issues'`_
 
     * _**`GITHUB_APP_PEM_PATH`**_  
+<<<<<<< HEAD
     This variable tells the application where the _`.pem`_ file containing the _`private key`_ is located. This key must be generated in the configuration page of the application at the [GitHub website](https://github.com/settings/apps).
     > _**`ATTENTION!`** The path **HAS** to be `absolute`._ 
+=======
+    This variable tells the application where the _`.pem`_ file containing the _`private key`_ is located. This key must be generated in the configuration page of the application at the [GitHub website](https://github.com/settings/apps). 
+>>>>>>> development
 
     * _**`GITHUB_APP_ID`**_  
     This is the ID number of the application and can also be found at its configuration page at the [GitHub website](https://github.com/settings/apps).
 
+<<<<<<< HEAD
     > _**`ATTENTION!`** Don't forget to **`install`** the `application` on the `GitHub account`. Otherwise GitHub will ignore attempts of the application to log issues._
 
 ## Setting up and running the Flask server:
@@ -76,11 +118,28 @@ export FLASK_APP=ovil
 ```
 
 * _*`(OPTIONAL)`*_ If you'd like to see debug messages being printed to the terminal where your application will be executing you must tell Flask to run in the `development` mode by issuing the following command:
+=======
+    > _**`ATTENTION!`** Don't forget to **`install`** the `application` in the `GitHub account`. Otherwise GitHub will ignore the application attempts of logging issues._
+
+## Setting up and running the Flask server:
+
+1.  OVIL is now installed on your virtual environment. The next step is to setup Flask. First you need to tell Flask which application it should run by issuing the following command:
+```console
+export FLASK_APP=ovil
+```
+2. You are now ready to start your Flask application! The following command will start Flask and set it up to listen to external connections to port `5000`:
+```console
+flask run --host=0.0.0.0 --port=5000
+```
+
+3. _*`(OPTIONAL)`*_ If you'd like to see debug messages being printed to the terminal where your application is running you must tell Flask to run in `development` mode by issuing the following command and then repeating _**`step 2`**_:
+>>>>>>> development
 ```console
 export FLASK_ENV=development
 ```
 > _The default value to this environment variable is `production`_
 
+<<<<<<< HEAD
 * You are now ready to start your Flask application! The following command will start Flask and set it up to listen to external connections at port `5000`:
 ```console
 flask run --host=0.0.0.0 --port=5000
@@ -88,3 +147,11 @@ flask run --host=0.0.0.0 --port=5000
 > _The `big4-azure` server is currently configured to accept connections to the port `5000`. If that changes, just replace the value specified to the parameter `--port`_
 
 * _**CONGRATULATIONS!**_ The configuration is finished. You should be able to access the application by typing _http://40.83.166.244:5000_ (or the in your browser.
+=======
+4. _*`(OPTIONAL)`*_ Alternatively you can run Flask _locally_ by skipping _**`step 2`**_ and issuing the following command instead. That way you will have to access you application by typing _`localhost:5000`_ in your browser.
+```console
+flask run
+```
+
+* _**CONGRATULATIONS!**_ The configuration is finished. You should be able to access the application from your browser.
+>>>>>>> development
