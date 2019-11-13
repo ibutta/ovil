@@ -2,7 +2,7 @@
 
 {% block add_links %}
     <!-- Include stylesheet for codemirror-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='codemirror-5.49.2/lib/codemirror.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.css">
 
 
 {% endblock %}
@@ -74,8 +74,8 @@
 
 {% block scripts %}
 
-    <script src="{{ url_for('static', filename='codemirror-5.49.2/lib/codemirror.js')}}"></script>
-    <script src="{{ url_for('static', filename='codemirror-5.49.2/mode/sql/sql.js')}}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/mode/sql/sql.js"></script>
 
     <script type=text/javascript>
         var txtArea = document.getElementById("sql_editor");
